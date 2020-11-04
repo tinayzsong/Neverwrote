@@ -1,51 +1,81 @@
 const _ = require('lodash');
 const api = require('../helpers/api');
-
-
-// The initial state of blog post data
+const DELETEN = 'myapp/DELETEN';
+const CREATEN = 'myapp/CREATEN';
+const SEARCHED = 'myapp/SEARCHED';
+const RESETNOTE = 'myapp/RESETNOTE';
+const SHOW = 'myapp/SHOW';
 const initialState = {
-  visibleNotes: [
-    { id: 5,
-      title: "From Redux Store: Companies that make computers",
-      content: "content1",
-      createdAt: "2016-09-11T23:26:36.000Z",
-      updatedAt: "2016-09-11T23:26:36.000Z"
-    },
-    {id: 4,
-     title: "From Redux Store: Dell",
-      content: "content1",
-     createdAt: "2016-09-11T23:18:08.000Z",
-     updatedAt: "2016-09-11T23:18:08.000Z"
-    },
-    { id: 3,
-      title: "From Redux Store: Lego Nexo Knights",
-       content: "content1",
-      createdAt: "2016-09-11T07:47:30.000Z",
-      updatedAt: "2016-09-11T07:47:30.000Z"
-    },
-    { id: 2,
-      title: "From Redux Store: React",
-       content: "content1",
-      createdAt: "2016-09-11T07:46:55.000Z",
-      updatedAt: "2016-09-11T07:46:55.000Z"
-    },
-    { id: 1,
-      title: "From Redux Store: Deep Learning",
-       content: "content1",
-      createdAt: "2016-09-11T07:46:28.000Z",
-      updatedAt: "2016-09-11T07:46:28.000Z"
-    }
-
-  ]
+  notes:[],
+  activeNoteId: -1,
+  searchedNotes:[],
 };
-
-// Function which takes the current data state and an action,
-// and returns a new state
-function reducer(state, action) {
+reducer = (state, action) => {
   state = state || initialState;
   action = action || {};
-
-  return state;
+  switch(action.type) {
+    case RESETNOTE: {
+      return Object.assign({}, state, { activeNoteId: -1});
+    }
+    case SHOW: {
+      return Object.assign({}, state, {activeNoteId:action.noteId});
+    }
+    case DELETEN: {
+        const newState = _.clone(state)
+        newState.notes = _.reject(state.notes,{id:action.noteId});
+        return newState;
+    }
+    case CREATEN: {
+      const unsortedNotes = _.concat(state.notes, action.note);
+      const notes = _.orderBy(unsortedNotes,'createdAt','desc');
+      return _.assign({},state,{notes});
+    }
+    case SEARCHED: {
+      const searchedNotes = action.notes;
+      return _.assign({},state,{searchedNotes});
+    }
+    default: return state;
+  }
 }
-
+reducer.loadNoteContent = noteId => {
+  return(dispatch) => {
+    api.get('/notes/'+noteId)
+        .then(() => {
+            dispatch({type:SHOW, noteId})
+        })
+  }
+}
+reducer.resetNote = () => {
+  return(dispatch) => {
+    dispatch({type:RESETNOTE})
+  }
+}
+reducer.createNote = (newNote, cb) => {
+  return dispatch => {
+    api.post('/notes',newNote)
+        .then((note) => {
+            dispatch({type:CREATEN, note});
+    });
+  }
+}
+reducer.deleteNote = noteId => {
+  return dispatch => {
+    api.delete('/notes/'+noteId).then((note) => {
+      dispatch({type:DELETEN, noteId})
+    })
+  }
+}
+reducer.onSearchNotes = phrase => {
+    return dispatch => {
+        api.get('/search/notes/' + phrase).then((notes) => {
+            const tempNotebooks = []
+            notes.map((note) => {
+                api.get('/notebooks/'+note.notebookId).then((notebook) => {
+                    tempNotebooks.push(notebook);
+                })
+            })
+            dispatch({type:SEARCHED, tempNotebooks, notes })
+        })
+    }
+}
 module.exports = reducer;
