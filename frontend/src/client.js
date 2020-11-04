@@ -9,12 +9,11 @@ const ReactDOM = require('react-dom');
 
 const createStore = require('./helpers/createStore');
 const Root = React.createFactory(require('./components/Root'));
-const combinedReducers = require('./reducers');
 
 // Initialisation function which we will call on page load
-window.main = (initialState) => {
+window.main = (state) => {
   // Create root React component with Redux store
-  const store = createStore(initialState);
+  const store = createStore(state);
   const rootComponent = Root({ store });
 
   // Mount React root component in DOM
