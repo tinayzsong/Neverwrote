@@ -6,6 +6,7 @@ const React = require('react');
  */
 class MarkdownEditor extends React.Component {
   componentDidMount() {
+    // SimpleMDE must be required here since it's browser-only.
     const SimpleMDE = require('simplemde');
 
     // Turn our plain old text area into a beautiful markdown editor
@@ -23,7 +24,7 @@ class MarkdownEditor extends React.Component {
     this.simpleMDE.codemirror.on('change', () => {
       const newText = this.simpleMDE.value();
       if(newText !== this.props.value) {
-        this.props.onChange(newText);
+        this.props.onChange({ target: { value: newText } });
       }
     });
   }
@@ -38,7 +39,7 @@ class MarkdownEditor extends React.Component {
 
   // Describe how to render the component
   render() {
-    const ref = element => { this.textarea = element; };
+    const ref = (element) => { this.textarea = element; };
     return (
       <textarea ref={ref} />
     );
