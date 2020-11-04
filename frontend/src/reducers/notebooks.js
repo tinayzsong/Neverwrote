@@ -1,155 +1,152 @@
 const _ = require('lodash');
 const api = require('../helpers/api');
+const UPDATE = 'myapp/UPDATE';
+const CREATE = 'myapp/CREATE';
+const DELETE = 'myapp/DELETE';
+const SHOW = 'myapp/SHOW';
+const DELETEN = 'myapp/DELETEN';
+const CREATEN = 'myapp/CREATEN';
+const SEARCHED = 'myapp/SEARCHED';
+const RESETNOTE = 'myapp/RESETNOTE';
+const RESETNOTEBOOK ='myapp/RESETNOTEBOOK';
 
-// Action type constants
-const INSERT = 'frontend/notebooks/INSERT';
-const CHANGE = 'frontend/notebooks/CHANGE';
-const REMOVE = 'frontend/notebooks/REMOVE';
-const UPDATE = 'frontend/notebooks/UPDATE';
-const SETNOTEBOOK = 'frontend/notebooks/SETNOTEBOOK';
-
-// The initial state of notebook data
 const initialState = {
-  visibleNotebooks: [
-    {
-      activeNotebookId: -1,
-      activeNote: null,
-      notes: [],
-    }
-
-  ]
+  notebooks: [
+    { id: 100, 
+      title: 'From Redux Store: A hard-coded notebook' 
+    },
+    { id: 101, 
+      title: 'From Redux Store: Another hard-coded notebook' 
+    },
+  ],
+  activeNotebookId: -1,
+  notes:[],
+  activeNoteId: -1,
+  searchedNotes:[],
 };
 
-// Function which takes the current data state and an action,
-// and returns a new state
-function reducer(state, action) {
+reducer = (state, action) => {
   state = state || initialState;
   action = action || {};
-
   switch(action.type) {
-
- // Inserts new notebook into the local store
-    case INSERT: {
-
-      const unsortedNotebooks = _.concat(state.visibleNotebooks, action.notebooks);
-
-      const visibleNotebooks = _.orderBy(unsortedNotebooks, 'createdAt','desc');
-
-      // Return updated state
-      return _.assign({}, state, { visibleNotebooks} );
+    case UPDATE: {
+      return Object.assign({}, state, { 
+        activeNotebookId:action.notebookId,
+        notes: action.notes, 
+        activeNoteId: -1}
+        );
     }
-
-
-    // Removes a single notebook from the visible notebook list
-    case REMOVE: {
-      const visibleNotebooks = _.reject(state.visibleNotebooks, {id: action.id});
-      return _.assign({}, state, { visibleNotebooks });
+    case RESETNOTE: {
+      return Object.assign({}, state, { activeNoteId: -1});
     }
-
-      // Changes a single notebook's data in the local store
-    case CHANGE: {
-      const visibleNotebooks = _.clone(state.visibleNotebooks);
-      const changedIndex = _.findIndex(state.visibleNotebooks, {id: action.notebook.id })
-      visibleNotebooks[changedIndex] = action.notebook;
-      return _.assign({}, state, { visibleNotebooks });
+    case RESETNOTEBOOK:{
+       return Object.assign({}, state, { activeNotebookId:-1});
     }
-     	case UPDATE: {
-    	return Object.assign({}, state, { activeNotebookId: action.notebookId, notes: action.notes, activeNote: null });
+    case CREATE: {
+      const unsortedNotebooks = _.concat(state.notebooks,action.notebook);
+      const notebooks = _.orderBy(unsortedNotebooks, 'createdAt', 'desc');
+      return _.assign({}, state, {notebooks});
+    }case DELETE: {
+      const newState = _.clone(state);
+      newState.notebooks = _.reject(state.notebooks, {id:action.notebookId});
+      return newState;
     }
-
-    case SETNOTEBOOK: {
-      return _.assign({}, state, { activeNotebookId: action.notebookId, notes: action.notes });
+    case SHOW:{
+      return Object.assign({}, state, {activeNoteId:action.noteId});
     }
-
-
-
-
+    case DELETEN:{
+        const newState = _.clone(state)
+        newState.notes = _.reject(state.notes,{id:action.noteId});
+        return newState;
+    }
+    case CREATEN: {
+      const unsortedNotes = _.concat(state.notes, action.note);
+      const notes = _.orderBy(unsortedNotes,'createdAt','desc');
+      return _.assign({},state,{notes});
+    }
+    case SEARCHED: {
+      const searchedNotes = action.notes;
+      const notebooks = action.tempNotebooks;
+      return _.assign({},state,{searchedNotes});
+    }
     default: return state;
   }
 }
-
-// Now we define a whole bunch of action creators
-
-// Inserts notebooks into the notebook list
-reducer.insertNotebooks = (notebooks) => {
-  return { type: INSERT, notebooks };
-};
-
-// Attempts to create a notebook on the server and inserts it into the local notebook
-// list if successful
-reducer.createNotebook = (newNotebook, callback) => {
-  return (dispatch) => {
-    api.post('/notebooks', newNotebook).then((notebook) => {
-
-      dispatch(reducer.insertNotebooks([notebook]));
-      callback();
-    }).catch(() => {
-      alert('Failed to create notebook. Are all of the fields filled in correctly?');
-    });
-  };
-};
-
-
-// Removes a notebook from the visible notebook list
-reducer.removeNoteBook = (id) => {
-  return { type: REMOVE, id };
-};
-
-
-
-// Attempts to delete a notebook from the server and removes it from the visible
-// notebook list if successful
-reducer.deleteNotebook = (notebookId) => {
-
-   return (dispatch) => {
-    api.delete('/notebooks/' + notebookId).then(() => {
-      // Delete post.
-      dispatch(reducer.removeNoteBook(notebookId));
-
-    }).catch(() => {
-      alert('Failed to delete notebook.');
-    });
-  };
-
-};
-
-
-// Changes local post data
-reducer.changeNotebook = (notebook) => {
-  return { type: CHANGE, notebook };
-};
-
-// Attempts to update a notebook on the server and updates local notebook data if
-// successful
-reducer.saveNotebook = (editedNotebook, callback) => {
-  return (dispatch) => {
-    api.put('/notebooks/' + editedNotebook.id, editedNotebook).then((notebook) => {
-      // Saves local notebook.
-      dispatch(reducer.changeNotebook(notebook));
-      callback();
-    }).catch(() => {
-      alert('Failed to save notebook.  Are all of the fields filled in correctly?');
-    });
-  };
-};
-
-reducer.loadNotes = (notebookId) => {
-	return (dispatch) => {
-    api.get('/notebooks/' + notebookId + '/notes').then((notes) => {
-      dispatch({ type: UPDATE, notebookId, notes })
-    });
-  };
-};
-
-reducer.setActiveNotebook = (note) => {
-  return (dispatch) => {
-    dispatch({type: SETNOTEBOOK, note})
-  };
-};
-
-
-
-
-
-// Export the action creators and reducer
+reducer.loadNotes = notebookId => {
+  return dispatch => {
+    api.get('/notebooks/' + notebookId + '/notes')
+      .then(notes => {
+        dispatch({
+          type: UPDATE, 
+          notebookId, 
+          notes
+        })
+      })
+  }
+}
+reducer.loadNoteContent = noteId => {
+  return dispatch => {
+    api.get('/notes/'+noteId)
+      .then(note => {
+        dispatch({type:SHOW, noteId})
+    })
+  }
+}
+reducer.resetNote = () => {
+  return(dispatch) => {
+    dispatch({type:RESETNOTE})
+  }
+}
+reducer.resetNotebook = () => {
+  return(dispatch) => {
+    dispatch({type:RESETNOTEBOOK})
+  }
+}
+reducer.deleteNotebook = notebookId => {
+  return dispatch => {
+    api.delete('/notebooks/'+notebookId)
+      .then((notebook)=> {
+        dispatch({type: DELETE, notebookId})
+      })
+  }
+}
+reducer.createNotebook = (newNotebook, cb) => {
+  return dispatch => {
+    api.post('/notebooks', newNotebook)
+      .then(notebook => {
+        dispatch({type: CREATE, notebook});
+      });
+  }
+}
+reducer.createNote = (newNote, cb) => {
+  return dispatch => {
+    api.post('/notes',newNote)
+      .then(note => {
+        dispatch({type:CREATEN, note});
+      });
+  }
+}
+reducer.deleteNote = noteId => {
+  return dispatch => {
+    api.delete('/notes/'+noteId)
+      .then(note => {
+        dispatch({type:DELETEN, noteId})
+    })
+  }
+}
+reducer.onSearchNotes = phrase => {
+  return dispatch => {
+    api.get('/search/notes/' + phrase)
+      .then(notes => {
+        const tempNotebooks = []
+             notes.map(note => {
+                api.get('/notebooks/' + note.notebookId)
+                  .then(notebook => {
+                    tempNotebooks.push(notebook);
+                  }) 
+            })
+            dispatch({type:SEARCHED, tempNotebooks, notes })
+        })
+      }
+    }
 module.exports = reducer;
