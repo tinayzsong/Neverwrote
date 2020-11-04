@@ -1,67 +1,54 @@
 const React = require('react');
 const _ = require('lodash');
 
-/**
- * A form for editing a notebook title.
- */
 class NotebookEdit extends React.Component {
-  constructor(props) {
-    super(props);
-    const notebook = props.notebook || {};
-
-    this.state = {
-      title: notebook.title || '',
-
-    };
-  }
-
-  render() {
-    const revertAndStopEditing = (event) => {
-      event.preventDefault();
-      this.props.onCancel();
-    };
-
-    const submitAndStopEditing = (event) => {
-      event.preventDefault();
-      // Creates a new noebook object and saves it.
-      const editedNotebook = _.assign({}, this.props.notebook, {
-        title: this.state.title,
-
-      });
-      this.props.onSave(editedNotebook);
-    };
-
-    const onTitleChange = (event) => {
-      this.setState({ title: event.target.value });
-    };
-
-
-
-    return (
-      <form className="blog-post">
-        {/* Title field */}
-        <div className="form-group">
-          <input className="form-control input-lg" value={this.state.title}
-            placeholder="Notebook title" onChange={onTitleChange}
-          />
-        </div>
-
-        {/* Save button */}
-        <button className="btn btn-primary pull-right"
-          onClick={submitAndStopEditing}
-        >
-          Save
-        </button>
-        {/* Cancel button */}
-        <button className="btn btn-danger pull-right"
-          style={{ marginRight: '12px' }}
-          onClick={revertAndStopEditing}
-        >
-          Cancel
-        </button>
-      </form>
-    );
-  }
+    constructor(props) {
+        super(props);
+        const notebook = props.notebook || {};
+        this.state = {
+            title: notebook.title || '',
+        };
+    }
+    render() {
+        const revertAndStopEditing = event => {
+            event.preventDefault();
+            this.props.onCancel();
+        };
+        const submitAndStopEditing = event => {
+            event.preventDefault();
+            const editedNotebook = _.assign({}, this.props.notebook, {
+                title: this.state.title
+            });
+            this.props.onSave(editedNotebook);
+            this.props.onCancel();
+        };
+        const onTitleChange = event => {
+            this.setState({ 
+                title: event.target.value 
+            });
+        };
+        return (
+            <div>
+                <div className="input-group">
+                    <input className="form-control" 
+                        value={this.state.title}
+                        placeholder="Notebook Title" 
+                        onChange={onTitleChange}
+                    />
+                    <div className="input-group-btn">
+                        <button className="btn btn-success"
+                            onClick={submitAndStopEditing}
+                        > ✔️
+                        </button>
+                        <button className="btn btn-danger"
+                            onClick={revertAndStopEditing}
+                        > ×
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 }
 
 module.exports = NotebookEdit;
