@@ -16,18 +16,16 @@ if(process.env.NODE_ENV === 'development') {
 }
 
 // Define the Root component
-const Root = (props) => {
-  return (
-    /* The Provider gives descendants the ability to connect to the Redux store */
-    <Provider store={props.store}>
-      <div>
-        {/* The Home component contains the guts of the page */}
-        <Home />
-        {/* DevTools is just an empty element when not in development mode */}
-        <DevTools />
-      </div>
-    </Provider>
-  );
-};
+const Root = props => (
+  /* The Provider gives descendants the ability to connect to the Redux store */
+  <Provider store={props.store}>
+    <div>
+      {/* The Home component contains the guts of the page */}
+      <Home />
+      {/* DevTools is just an empty element when not in development mode */}
+      <DevTools />
+    </div>
+  </Provider>
+);
 
 module.exports = Root;
